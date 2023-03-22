@@ -1,18 +1,79 @@
 const keyboard_msg_node = $('.keyboard .message');
+const selectListbox = document.querySelector("#selectListbox");
+
+let recentlyAdded = "";
 
 
 document.addEventListener('keydown', function(event) {
+
+	if(recentlyAdded == ("DN " + event.code))
+		return; //함수 강제종료
+
+
+	
+	//기존 키기능을 막는 기능
+	event.preventDefault();	
+
+
+
 	keyboard_msg_node.text("DN " + event.code);
+	
+	//키 입력시 selectBox추가
+	let newOption = document.createElement("option");
+	newOption.appendChild(  document.createTextNode("DN " + event.code)  );
+	selectListbox.appendChild(newOption);
+
+	recentlyAdded = "DN " + event.code;
+
+
 
 	$( eventCode_To_viewId(event.code) ).addClass("pressed");
-	
 });
 document.addEventListener('keyup', function(event) {
+
+	if(recentlyAdded == ("UP " + event.code))
+		return; //함수 강제종료
+
+
+
+	//기존 키기능을 막는 기능
+	event.preventDefault();
+
+
+
 	keyboard_msg_node.text("UP " + event.code);
+	
+	//키 입력후  selectBox추가
+	let newOption = document.createElement("option");
+	newOption.appendChild(  document.createTextNode("UP " + event.code)  );
+	selectListbox.appendChild(newOption);
+
+	recentlyAdded = "UP " + event.code;
+
+
 
 	$( eventCode_To_viewId(event.code) ).removeClass("pressed");
 	
 });
+
+document.querySelector("#btnSave").addEventListener("click", function(event) {
+
+	let text = "";
+
+	for(op of selectListbox.querySelectorAll('option')){
+		text += (op.textContent + '\n');
+	}
+
+	let blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+	let url = URL.createObjectURL(blob);
+	let a = document.createElement("a");
+	a.href = url;
+	a.download = "macro.txt";
+	a.click();
+	URL.revokeObjectURL(url);
+
+});
+
 
 
 function eventCode_To_viewId(eventCode){
