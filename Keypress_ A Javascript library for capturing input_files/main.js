@@ -1,13 +1,36 @@
+//$는 jQuery 라이브러리에서 사용되는 함수로, HTML 문서에서 요소를 선택하거나 조작하는 기능을 제공합니다.
 const keyboard_msg_node = $('.keyboard .message');
 const selectListbox = document.querySelector("#selectListbox");
 
-let recentlyAdded = "";
+//setInterval()로 작성한 이전 밀리초 구하는 코드
+//let millis = 0; // 밀리초 변수
+//setInterval(() => { millis++; console.log(millis); }, 1); //setInterval(function, milliseconds);
+
+let startTime = -1;
+let pauseTime;
 
 
+
+let recentlyAddedText = ""; // select태그에 새로 추가되는 option태그의 text
+
+
+function addNewOption(text) {
+	let newOption = document.createElement("option");
+	newOption.appendChild(  document.createTextNode(text)  );
+	selectListbox.appendChild(newOption);
+}
 document.addEventListener('keydown', function(event) {
 
-	if(recentlyAdded == ("DN " + event.code))
+	if(recentlyAddedText == ("DN " + event.code))
 		return; //함수 강제종료
+
+
+
+	if(startTime != -1){
+		pauseTime = Date.now() - startTime;
+		addNewOption(pauseTime + "ms");
+	}
+
 
 
 	
@@ -19,11 +42,17 @@ document.addEventListener('keydown', function(event) {
 	keyboard_msg_node.text("DN " + event.code);
 	
 	//키 입력시 selectBox추가
-	let newOption = document.createElement("option");
-	newOption.appendChild(  document.createTextNode("DN " + event.code)  );
-	selectListbox.appendChild(newOption);
+	addNewOption("DN " + event.code);
 
-	recentlyAdded = "DN " + event.code;
+	recentlyAddedText = "DN " + event.code;
+
+
+
+
+	//DN~UP 사이의 시작시간
+	startTime = Date.now();
+
+
 
 
 
@@ -31,8 +60,15 @@ document.addEventListener('keydown', function(event) {
 });
 document.addEventListener('keyup', function(event) {
 
-	if(recentlyAdded == ("UP " + event.code))
+	if(recentlyAddedText == ("UP " + event.code))
 		return; //함수 강제종료
+
+
+
+
+	pauseTime = Date.now() - startTime;
+	addNewOption(pauseTime + "ms");
+
 
 
 
@@ -44,11 +80,19 @@ document.addEventListener('keyup', function(event) {
 	keyboard_msg_node.text("UP " + event.code);
 	
 	//키 입력후  selectBox추가
-	let newOption = document.createElement("option");
-	newOption.appendChild(  document.createTextNode("UP " + event.code)  );
-	selectListbox.appendChild(newOption);
+	addNewOption("UP " + event.code);
 
-	recentlyAdded = "UP " + event.code;
+	recentlyAddedText = "UP " + event.code;
+
+
+
+
+
+	//UP~DN 사이의 시작시간
+	startTime = Date.now();
+
+
+
 
 
 
