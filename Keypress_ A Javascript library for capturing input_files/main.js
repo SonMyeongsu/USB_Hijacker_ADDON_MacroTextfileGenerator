@@ -1,31 +1,47 @@
+//setInterval()로 작성한 이전 밀리초 구하는 코드
+//let millis = 0; // 밀리초 변수
+//setInterval(() => { millis++; console.log(millis); }, 1); //setInterval(function, milliseconds);
+
 
 //$는 jQuery 라이브러리에서 사용되는 함수로, HTML 문서에서 요소를 선택하거나 조작하는 기능을 제공합니다.
 $('.keyboard .message').text("");
 const selectListbox = document.querySelector("#selectListbox");
 const selectFunctionBox = document.querySelector("#selectFunctionBox");
 
-//setInterval()로 작성한 이전 밀리초 구하는 코드
-//let millis = 0; // 밀리초 변수
-//setInterval(() => { millis++; console.log(millis); }, 1); //setInterval(function, milliseconds);
-
 let startTime = -1;
 let pauseTime;
 
-
-
 let recentlyAddedText = ""; // select태그에 새로 추가되는 option태그의 text
+
+// selectFunctionBox의 함수들이 담길 Map
+const funcMap = new Map();
+
+
+
+// 빈공간 클릭 시 select 선택되었던 것들 모두 리셋
+document.addEventListener("click", function(event) {
+	if(event.target.nodeName !== "BUTTON" && event.target.nodeName !== "SELECT" && event.target.nodeName !== "OPTION"){
+		for (op of selectListbox.querySelectorAll('option')) 
+			op.selected = false;
+		for (op of selectFunctionBox.querySelectorAll('option'))
+			op.selected = false;
+	}
+});
+
+
 
 //option 요소노드 생성함수
 function addNewOption(selectTag, text) {//js에서는 매개변수 인자 순번대로 인식(단, 명확한 변수명은 그 매개변수만 인식됨!!)
 	let newOption = document.createElement("option");
 	newOption.appendChild(  document.createTextNode(text)  );
 	
-	//selectListbox.appendChild(newOption);
 	selectTag.appendChild(newOption);
 }
 
-document.addEventListener('keydown', function(event) {
 
+
+//키입력 발생 시 selectListbox에 DN / ms / UP option 추가
+document.addEventListener('keydown', function(event) {
 	if(recentlyAddedText == ("DN " + event.code))
 		return; //함수 강제종료
 
@@ -61,8 +77,12 @@ document.addEventListener('keydown', function(event) {
 	$( eventCode_To_viewId(event.code) ).addClass("pressed");
 });
 document.addEventListener('keyup', function(event) {
-
 	if(recentlyAddedText == ("UP " + event.code))
+		return; //함수 강제종료
+
+
+	//기존 DN이벤트에서는 예외 처리를 해줬지만 UP이벤트에서는 안해줘서 예외 처리 해줌.
+	if(startTime == -1)
 		return; //함수 강제종료
 
 
@@ -96,38 +116,130 @@ document.addEventListener('keyup', function(event) {
 	
 });
 
+
+
+//R,L버튼 클릭 이벤트
+document.querySelector("#btnMakeFunction").addEventListener("click", function(event) {
+	// css 선택자로 selected 된 option 태그들만 querySelectorAll !!
+	//const check = selectListbox.querySelectorAll('option:checked'); css선택자 문법에서 선택된option 뽑을 때는 option:selected 가 아닌 :checked 해야함(문법이 이상함)
+	//if( check.length == 0 )
+	//	return;
+
+	// selectListbox의 선택 여부 변수
+	let isExistSelected = false;
+	
+	for (op of selectListbox.querySelectorAll('option')) 
+		if(op.selected)
+			isExistSelected = true;
+		
+	if(!isExistSelected)
+		return;
+	
+
+
+	// 이름을 입력받고 map에 해당 key로 내용 삽입하기 
+	{
+		funcKey = prompt("함수 이름을 작성하시오."); 
+		funcValue = "";
+		
+		addNewOption(selectFunctionBox, funcKey);
+		
+		for (op of selectListbox.querySelectorAll('option')) 
+			if(op.selected)
+				funcValue += '\t' + op.textContent + '\n';
+		
+		
+		let lastIndex = funcValue.lastIndexOf("\n");
+		funcValue = funcValue.substring(0, lastIndex);
+		//문자열내 마지막 \n을 삭제 시켜주는 것을 정규식으로 표현할 경우 아래와 같이 된다. funcValue.replace(/\n\s*$/, "");
+		
+		
+		funcMap.set(funcKey, funcValue);
+		alert(funcKey + " : " + "\n" + funcValue);
+	}
+	
+	
+	
+	// 선택되었던 왼쪽 옵션태그들 지우고 $key이름의 옵션 삽입
+	{
+		const optionElements = selectListbox.querySelectorAll('option');
+		const startIndex = selectListbox.selectedIndex;
+		
+		const insertElement = document.createElement('option');
+		insertElement.textContent = "$"+funcKey;
+		selectListbox.insertBefore(insertElement, optionElements[startIndex]);
+		
+		for(op of optionElements){
+			if(op.selected)
+				op.remove();
+		}
+	}
+	
+	
+	startTime = -1;
+});
+document.querySelector("#btnCallFunction").addEventListener("click", function(event) {
+	// selectFunctionBox 선택 여부 변수
+	let isExistSelected = false;
+	
+	for (op of selectFunctionBox.querySelectorAll('option')) 
+		if(op.selected)
+			isExistSelected = true;
+		
+	if(!isExistSelected)
+		return;
+	
+	addNewOption(selectListbox, "$" + selectFunctionBox.querySelectorAll('option')[selectFunctionBox.selectedIndex].textContent);
+	
+	
+	startTime = -1;
+});
+
+
+
+//txt 파일로 저장
 document.querySelector("#btnSave").addEventListener("click", function(event) {
 
 	let text = "";
 
-	for(op of selectListbox.querySelectorAll('option')){
-		text += (op.textContent + '\n');
+
+	// selectFunctionBox 내용 텍스트 병합
+	{
+		for (op of selectFunctionBox.querySelectorAll('option')) {
+			const funcKey = op.textContent;
+			const funcValue = funcMap.get(funcKey);
+			
+			/*
+				@funcKey
+				{
+				funcValue
+				}
+			*/
+			
+			text += `@${funcKey}\n{\n${funcValue}\n}\n`; // += '@' + funcKey + '\n' + '{' + '\n' + funcValue ...
+		}
+		
+		text += '\n';
 	}
+	
 
-	let blob = new Blob([text], {type: "text/plain;charset=utf-8"});
-	let url = URL.createObjectURL(blob);
-	let a = document.createElement("a");
-	a.href = url;
-	a.download = "macro.txt";
-	a.click();
-	URL.revokeObjectURL(url);
+	// selectListbox 내용 텍스트 병합 후 파일로 저장
+	{
+		for(op of selectListbox.querySelectorAll('option')){
+			text += (op.textContent + '\n');
+		}
 
+		let blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+		let url = URL.createObjectURL(blob);
+		let a = document.createElement("a");
+		a.href = url;
+		a.download = "macro.txt";
+		a.click();
+		URL.revokeObjectURL(url);
+	}
 });
 
-//오른쪽으로 옵션 생성 이벤트, 나중에 할것
-//document.querySelector("#btnMakeFunction").addEventListener("click", function(event) {
-//	for (op of selectListbox.querySelectorAll('option'))
-//		if(op.selected)
-//			console.log( op.textContent );
-//});
 
-//오른쪽버튼 클릭시 prompt창(key값)
-document.querySelector("#btnMakeFunction").addEventListener("click", function(event) {
-	
-	let functionName = prompt("함수 이름을 작성하시오.");
-	addNewOption(selectFunctionBox, functionName);
-	
-});
 
 function eventCode_To_keycode(eventCode){
 	
@@ -447,7 +559,6 @@ function eventCode_To_keycode(eventCode){
 	
 	return keycode;
 }
-
 function eventCode_To_viewId(eventCode){
 
 	let viewId = '';
@@ -770,5 +881,3 @@ function eventCode_To_viewId(eventCode){
 
 	return viewId;
 }
-
-
