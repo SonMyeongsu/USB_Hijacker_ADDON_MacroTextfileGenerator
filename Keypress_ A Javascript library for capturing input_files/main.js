@@ -195,6 +195,38 @@ document.querySelector("#btnCallFunction").addEventListener("click", function(ev
 	startTime = -1;
 });
 
+//왼쪽 select 태그 선택된 요소 삭제
+document.querySelector("#btnDelete").addEventListener("click", function() {
+
+	// selectListbox의 선택 여부 변수
+	let isExistSelected = false;
+	
+	for (op of selectListbox.querySelectorAll('option')) 
+		if(op.selected)
+			isExistSelected = true;
+		
+	if(!isExistSelected)
+		return;
+	
+	
+	
+	
+	const optionElements = selectListbox.querySelectorAll('option');
+	//const startIndex = selectListbox.selectedIndex;
+	
+	//const insertElement = document.createElement('option');
+	//insertElement.textContent = "$"+funcKey;
+	//selectListbox.insertBefore(insertElement, optionElements[startIndex]);
+	
+	for(op of optionElements){
+		if(op.selected)
+			op.remove();
+	}
+
+	
+	
+
+});
 
 
 //txt 파일로 저장
